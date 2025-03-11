@@ -18,7 +18,7 @@
         <tbody>
             {% for expense in expenses %}
             <tr>
-                <td>{{ expense.date }}</td>
+                <td>{{ expense.date.strftime('%d.%m.%Y') }}</td>
                 <td>{{ expense.category }}</td>
                 <td>{{ expense.description }}</td>
                 <td>{{ expense.amount }}</td>
