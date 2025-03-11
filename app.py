@@ -2,6 +2,7 @@ from flask import Flask, render_template, redirect, url_for, flash, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_bcrypt import Bcrypt
+from datetime import datetime
 from models import db, User, Expense
 from forms import RegistrationForm, LoginForm, ExpenseForm
 
@@ -64,8 +65,16 @@ def dashboard():
 def add_expense():
     form = ExpenseForm()
     if form.validate_on_submit():
+        try:
+            # Преобразуем дату из строки формата дд.мм.гггг в объект datetime.date
+            date_obj = datetime.strptime(form.date.data, '%d.%m.%Y').date()
+        except ValueError:
+            flash('Ошибка: дата должна быть в формате дд.мм.гггг.', 'danger')
+            return render_template('add_expense.html', form=form)
+        # Объект расхода/дохода
         expense = Expense(
                         user_id=current_user.id,
+                        date=date_obj,  # Используем преобразованную дату
                         amount=form.amount.data, 
                         category=form.category.data, 
                         description=form.description.data, 
@@ -85,12 +94,25 @@ def edit_expense(expense_id):
         flash("Вы не можете редактировать эту запись.", "danger")
         return redirect(url_for('dashboard'))
     
-    form = ExpenseForm(obj=expense)  # Создаём форму для редактирования записи, передав текущие значения
+    # Создаём форму для редактирования записи, передав текущие значения
+    form = ExpenseForm(obj=expense)
+    
+    # Преобразуем существующую дату в формат дд.мм.гггг для отображения в поле формы
+    form.date.data = expense.date.strftime('%d.%m.%Y')
+    
     if form.validate_on_submit():
+        try:
+            # Преобразуем дату из строки формата дд.мм.гггг в объект datetime.date
+            date_obj = datetime.strptime(form.date.data, '%d.%m.%Y').date()
+        except ValueError:
+            flash('Ошибка: дата должна быть в формате дд.мм.гггг.', 'danger')
+            return render_template('edit_expense.html', form=form, expense=expense)
+        
         expense.amount = form.amount.data
         expense.category = form.category.data
         expense.description = form.description.data
         expense.is_income = form.is_income.data
+        expense.date = date_obj
         db.session.commit()
         flash('Запись обновлена!', 'success')
         return redirect(url_for('dashboard'))
