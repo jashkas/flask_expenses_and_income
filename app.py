@@ -2,8 +2,8 @@ from flask import Flask, render_template, redirect, url_for, flash, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_bcrypt import Bcrypt
-from models import db, User, Record
-from forms import RegistrationForm, LoginForm, RecordForm
+from models import db, User, Expense
+from forms import RegistrationForm, LoginForm, ExpenseForm
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -53,48 +53,63 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-@app.route('/dashboard')
+@app.route('/dashboard', methods=['GET', 'POST'])
 @login_required
 def dashboard():
-    records = Record.query.filter_by(user_id=current_user.id)
-    return render_template('dashboard.html', records=records)
+    expenses = Expense.query.filter_by(user_id=current_user.id).all()
+    return render_template('dashboard.html', expenses=expenses)
 
 @app.route('/add', methods=['GET', 'POST'])
 @login_required
-def add_record():
-    form = RecordForm()
+def add_expense():
+    form = ExpenseForm()
     if form.validate_on_submit():
-        record = Record(amount=form.amount.data, category=form.category.data, is_income=form.is_income.data, user_id=current_user.id)
-        db.session.add(record)
+        expense = Expense(
+                        user_id=current_user.id,
+                        amount=form.amount.data, 
+                        category=form.category.data, 
+                        description=form.description.data, 
+                        is_income=form.is_income.data)
+        db.session.add(expense)
         db.session.commit()
         flash('Запись добавлена!', 'success')
         return redirect(url_for('dashboard'))
-    return render_template('add_record.html', form=form)
+    return render_template('add_expense.html', form=form)
 
-@app.route('/edit/<int:record_id>', methods=['GET', 'POST'])
+@app.route('/edit/<int:expense_id>', methods=['GET', 'POST'])
 @login_required
-def edit_record(record_id):
-    record = Record.query.get_or_404(record_id)
-    form = RecordForm(obj=record)
+def edit_expense(expense_id):
+    expense = Expense.query.get_or_404(expense_id)  # Получить запись или вернуть 404, если её нет
+    # Проверить, что запись принадлежит текущему пользователю
+    if expense.user_id != current_user.id:
+        flash("Вы не можете редактировать эту запись.", "danger")
+        return redirect(url_for('dashboard'))
+    
+    form = ExpenseForm(obj=expense)  # Создаём форму для редактирования записи, передав текущие значения
     if form.validate_on_submit():
-        record.amount = form.amount.data
-        record.category = form.category.data
-        record.is_income = form.is_income.data
+        expense.amount = form.amount.data
+        expense.category = form.category.data
+        expense.description = form.description.data
+        expense.is_income = form.is_income.data
         db.session.commit()
         flash('Запись обновлена!', 'success')
         return redirect(url_for('dashboard'))
-    return render_template('edit_record.html', form=form)
+    return render_template('edit_expense.html', form=form, expense=expense)
 
-@app.route('/delete/<int:record_id>')
+@app.route('/delete/<int:expense_id>')
 @login_required
-def delete_record(record_id):
-    record = Record.query.get_or_404(record_id)
-    db.session.delete(record)
+def delete_expense(expense_id):
+    expense = Expense.query.get_or_404(expense_id)
+    if expense.user_id != current_user.id:
+        flash('Вы не можете удалить эту запись.', 'danger')
+        return redirect(url_for('dashboard'))
+    db.session.delete(expense)
     db.session.commit()
     flash('Запись удалена!', 'success')
     return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':
+    # Создание базы данных
     with app.app_context():
         db.create_all()
     app.run(debug=True)

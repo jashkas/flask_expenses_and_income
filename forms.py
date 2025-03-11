@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, FloatField, BooleanField
-from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
+from wtforms import StringField, PasswordField, SubmitField, DecimalField, TextAreaField, BooleanField
+from wtforms.validators import DataRequired, Length, NumberRange, EqualTo, ValidationError
 from models import User
 
 class RegistrationForm(FlaskForm):
@@ -19,8 +19,9 @@ class LoginForm(FlaskForm):
     password = PasswordField('Пароль', validators=[DataRequired()])
     submit = SubmitField('Войти')
 
-class RecordForm(FlaskForm):
-    amount = FloatField('Сумма', validators=[DataRequired()])
-    category = StringField('Категория', validators=[DataRequired()])
-    is_income = BooleanField('Доход (если не отмечено, то расход)')
-    submit = SubmitField('Сохранить')
+class ExpenseForm(FlaskForm):
+    category = StringField('Категория', validators=[DataRequired(), Length(max=100)])
+    description = TextAreaField('Описание', validators=[Length(max=200)])
+    amount = DecimalField('Сумма', validators=[DataRequired(), NumberRange(min=0.01)], places=2)
+    is_income = BooleanField('Это доход?') # Чекбокс для выбора типа (доход или расход)
+    submit = SubmitField('Добавить')

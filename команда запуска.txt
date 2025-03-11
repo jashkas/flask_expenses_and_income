@@ -1,0 +1,1 @@
+E:\Bachelor\3_course\2sem\secure_software_development\secure_software_development\flask_expenses_and_income\.venv\Scripts\python.exe E:\Bachelor\3_course\2sem\secure_software_development\secure_software_development\flask_expenses_and_income\app.py
