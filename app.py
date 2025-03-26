@@ -97,22 +97,28 @@ def edit_expense(expense_id):
     # Создаём форму для редактирования записи, передав текущие значения
     form = ExpenseForm(obj=expense)
     
-    # Преобразуем существующую дату в формат дд.мм.гггг для отображения в поле формы
-    form.date.data = expense.date.strftime('%d.%m.%Y')
-    
-    if form.validate_on_submit():
+    if request.method == 'GET':
+        # Преобразуем существующую дату в формат дд.мм.гггг для отображения в поле формы
+        form.date.data = expense.date.strftime('%d.%m.%Y')
+
+
+    elif form.validate_on_submit():
         try:
             # Преобразуем дату из строки формата дд.мм.гггг в объект datetime.date
             date_obj = datetime.strptime(form.date.data, '%d.%m.%Y').date()
+            print(date_obj)
+            expense.date = date_obj
+            print(expense.date, form.date.data)
         except ValueError:
             flash('Ошибка: дата должна быть в формате дд.мм.гггг.', 'danger')
+            print("пошел вон")
             return render_template('edit_expense.html', form=form, expense=expense)
         
         expense.amount = form.amount.data
         expense.category = form.category.data
         expense.description = form.description.data
         expense.is_income = form.is_income.data
-        expense.date = date_obj
+
         db.session.commit()
         flash('Запись обновлена!', 'success')
         return redirect(url_for('dashboard'))

@@ -4,6 +4,14 @@
     <h2>Редактировать запись</h2>
     <form method="POST" action="{{ url_for('edit_expense', expense_id=expense.id) }}">
         {{ form.hidden_tag() }}
+        <!-- Поле даты -->
+        <div class="mb-3">
+            {{ form.date.label(class="form-label") }}
+            {{ form.date(class="form-control") }}
+            {% for error in form.date.errors %}
+            <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
         <!-- Поле для выбора категории -->
         <div class="mb-3">
             {{ form.category.label(class="form-label") }}
