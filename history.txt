@@ -1,0 +1,6 @@
+переход к готовой лабе 4 с sql инъекциями и XSS
+git checkout 2b808ccbd50c
+
+
+откат до уязвимого к sql инъекциям
+git checkout 26632e2ee9ace716b9b4f802b23bbfe69dba80d1
