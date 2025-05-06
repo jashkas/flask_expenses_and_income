@@ -5,11 +5,32 @@ from flask_bcrypt import Bcrypt
 from datetime import datetime
 from models import db, User, Expense
 from forms import RegistrationForm, LoginForm, ExpenseForm
+from markupsafe import escape # защита от XSS
+from functools import wraps
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Настройки CSP
+CSP_POLICY = (
+    "default-src 'self'; "
+    "script-src 'self'; "
+    "style-src 'self'; "
+    "img-src 'self'; "
+    "font-src 'self'; "
+    "object-src 'none'; "
+    "base-uri 'self'; "
+    "frame-ancestors 'none';"
+)
+def add_csp_header(response):
+    """Добавляет CSP-заголовок к HTTP-ответу"""
+    response.headers['Content-Security-Policy'] = CSP_POLICY
+    return response
+
+app.after_request(add_csp_header)
+
 
 db.init_app(app)
 bcrypt = Bcrypt(app)
@@ -28,10 +49,14 @@ def index():
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
-        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        user = User(username=form.username.data, password=hashed_password)
+        hashed_password = bcrypt.generate_password_hash(escape(form.password.data)).decode('utf-8')
+        user = User(username=escape(form.username.data), password=hashed_password)
         db.session.add(user)
         db.session.commit()
+        # ДЕМОНСТРАЦИЯ ТОГО ЧТО ПАРОЛЬ В БД ЗАШИФРОВАН
+        users = User.query.all()
+        for u in users:
+            print(u.username, "  ", u.password)
         flash('Успешная регистрация! Теперь войдите в систему.', 'success')
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
@@ -40,8 +65,8 @@ def register():
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
-        if user and bcrypt.check_password_hash(user.password, form.password.data):
+        user = User.query.filter_by(username=escape(form.username.data)).first()
+        if user and bcrypt.check_password_hash(user.password, escape(form.password.data)):
             login_user(user)
             return redirect(url_for('dashboard'))
         else:
@@ -76,8 +101,8 @@ def add_expense():
                         user_id=current_user.id,
                         date=date_obj,  # Используем преобразованную дату
                         amount=form.amount.data, 
-                        category=form.category.data, 
-                        description=form.description.data, 
+                        category=escape(form.category.data), 
+                        description=escape(form.description.data), 
                         is_income=form.is_income.data)
         db.session.add(expense)
         db.session.commit()
@@ -111,12 +136,11 @@ def edit_expense(expense_id):
             print(expense.date, form.date.data)
         except ValueError:
             flash('Ошибка: дата должна быть в формате дд.мм.гггг.', 'danger')
-            print("пошел вон")
             return render_template('edit_expense.html', form=form, expense=expense)
         
         expense.amount = form.amount.data
-        expense.category = form.category.data
-        expense.description = form.description.data
+        expense.category = escape(form.category.data)
+        expense.description = escape(form.description.data)
         expense.is_income = form.is_income.data
 
         db.session.commit()
