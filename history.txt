@@ -4,3 +4,6 @@ git checkout 2b808ccbd50c
 
 откат до уязвимого к sql инъекциям
 git checkout 26632e2ee9ace716b9b4f802b23bbfe69dba80d1
+
+защита XSS и CSP
+git checkout 378af27b1828e4f0ee99a3b76f97b65

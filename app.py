@@ -6,7 +6,6 @@ from datetime import datetime
 from models import db, User, Expense
 from forms import RegistrationForm, LoginForm, ExpenseForm
 from markupsafe import escape # защита от XSS
-from functools import wraps
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -17,7 +16,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 CSP_POLICY = (
     "default-src 'self'; "
     "script-src 'self'; "
-    "style-src 'self'; "
+    "style-src 'self' https://cdn.jsdelivr.net; "  # Разрешаем стили с jsdelivr
+    "script-src 'self' https://cdn.jsdelivr.net; "  # Разрешаем скрипты с jsdelivr
     "img-src 'self'; "
     "font-src 'self'; "
     "object-src 'none'; "
@@ -65,7 +65,7 @@ def register():
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(username=escape(form.username.data)).first()
+        user = User.query.filter_by(username=form.username.data).first()
         if user and bcrypt.check_password_hash(user.password, escape(form.password.data)):
             login_user(user)
             return redirect(url_for('dashboard'))
@@ -92,7 +92,7 @@ def add_expense():
     if form.validate_on_submit():
         try:
             # Преобразуем дату из строки формата дд.мм.гггг в объект datetime.date
-            date_obj = datetime.strptime(form.date.data, '%d.%m.%Y').date()
+            date_obj = datetime.strptime(escape(form.date.data), '%d.%m.%Y').date()
         except ValueError:
             flash('Ошибка: дата должна быть в формате дд.мм.гггг.', 'danger')
             return render_template('add_expense.html', form=form)
@@ -130,7 +130,7 @@ def edit_expense(expense_id):
     elif form.validate_on_submit():
         try:
             # Преобразуем дату из строки формата дд.мм.гггг в объект datetime.date
-            date_obj = datetime.strptime(form.date.data, '%d.%m.%Y').date()
+            date_obj = datetime.strptime(escape(form.date.data), '%d.%m.%Y').date()
             print(date_obj)
             expense.date = date_obj
             print(expense.date, form.date.data)
