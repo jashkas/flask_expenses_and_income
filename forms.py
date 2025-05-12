@@ -33,3 +33,7 @@ class ExpenseForm(FlaskForm):
             datetime.strptime(date.data, '%d.%m.%Y')  # Проверяем формат дд.мм.гггг
         except ValueError:
             raise ValidationError('Дата должна быть в формате дд.мм.гггг.')
+        
+class TwoFactorForm(FlaskForm):
+    token = StringField('Код аутентификации', validators=[DataRequired(), Length(min=6, max=6)])
+    submit = SubmitField('Подтвердить')

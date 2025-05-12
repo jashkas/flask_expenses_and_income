@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Настройка двухфакторной аутентификации{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Настройка двухфакторной аутентификации</h2>
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">Шаг 1: Установите приложение аутентификации</h5>
+            <p class="card-text">
+                Установите приложение для двухфакторной аутентификации, например:
+                <ul>
+                    <li>Google Authenticator</li>
+                    <li>Microsoft Authenticator</li>
+                    <li>Authy</li>
+                </ul>
+            </p>
+            
+            <h5 class="card-title mt-4">Шаг 2: Отсканируйте QR-код</h5>
+            <div class="text-center my-4">
+                <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" class="img-fluid" style="max-width: 200px;">
+            </div>
+            
+            <h5 class="card-title mt-4">Или введите код вручную</h5>
+            <div class="alert alert-secondary">
+                <strong>Секретный ключ:</strong> {{ secret }}
+            </div>
+            
+            <h5 class="card-title mt-4">Шаг 3: Продолжите</h5>
+            <p class="card-text">
+                После настройки приложения нажмите кнопку ниже, чтобы перейти к входу в систему.
+            </p>
+            <a href="{{ url_for('login') }}" class="btn btn-primary">Перейти к входу</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

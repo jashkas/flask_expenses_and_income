@@ -1,10 +1,14 @@
-from flask import Flask, render_template, redirect, url_for, flash, request
+from flask import Flask, render_template, redirect, url_for, flash, request, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_bcrypt import Bcrypt
 from datetime import datetime
+import pyotp
+import qrcode
+import io
+import base64
 from models import db, User, Expense
-from forms import RegistrationForm, LoginForm, ExpenseForm
+from forms import RegistrationForm, LoginForm, ExpenseForm, TwoFactorForm
 from markupsafe import escape # защита от XSS
 
 app = Flask(__name__)
@@ -18,7 +22,7 @@ CSP_POLICY = (
     "script-src 'self'; "
     "style-src 'self' https://cdn.jsdelivr.net; "  # Разрешаем стили с jsdelivr
     "script-src 'self' https://cdn.jsdelivr.net; "  # Разрешаем скрипты с jsdelivr
-    "img-src 'self'; "
+    "img-src 'self' data:; " # Добавляем data: для QR-кодов
     "font-src 'self'; "
     "object-src 'none'; "
     "base-uri 'self'; "
@@ -41,6 +45,19 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+def generate_totp_secret():
+    return pyotp.random_base32()
+
+def generate_totp_uri(username, secret):
+    return pyotp.totp.TOTP(secret).provisioning_uri(name=username, issuer_name="ExpenseTracker")
+
+def generate_qr_code(uri):
+    img = qrcode.make(uri)
+    buf = io.BytesIO()
+    img.save(buf)
+    buf.seek(0)
+    return base64.b64encode(buf.read()).decode('ascii')
+
 @app.route('/')
 def index():
     return redirect(url_for('login'))
@@ -50,28 +67,59 @@ def register():
     form = RegistrationForm()
     if form.validate_on_submit():
         hashed_password = bcrypt.generate_password_hash(escape(form.password.data)).decode('utf-8')
-        user = User(username=escape(form.username.data), password=hashed_password)
+        # Генерация секрета для 2FA
+        totp_secret = generate_totp_secret()
+        user = User(
+            username=escape(form.username.data), 
+            password=hashed_password,
+            totp_secret=totp_secret)
         db.session.add(user)
         db.session.commit()
-        # ДЕМОНСТРАЦИЯ ТОГО ЧТО ПАРОЛЬ В БД ЗАШИФРОВАН
-        users = User.query.all()
-        for u in users:
-            print(u.username, "  ", u.password)
-        flash('Успешная регистрация! Теперь войдите в систему.', 'success')
-        return redirect(url_for('login'))
+
+        # Генерация QR-кода для настройки 2FA
+        totp_uri = generate_totp_uri(user.username, totp_secret)
+        qr_code = generate_qr_code(totp_uri)
+
+        flash('Успешная регистрация! Отсканируйте QR-код в приложении для 2FA.', 'success')
+        return render_template('setup_2fa.html', qr_code=qr_code, secret=totp_secret)
     return render_template('register.html', form=form)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
+        user = User.query.filter_by(username=escape(form.username.data)).first()
         if user and bcrypt.check_password_hash(user.password, escape(form.password.data)):
-            login_user(user)
-            return redirect(url_for('dashboard'))
+            # Сохраняем user_id в сессии для второго фактора
+            session['pre_2fa_user_id'] = user.id
+            return redirect(url_for('verify_2fa'))
         else:
             flash('Ошибка входа. Проверьте логин и пароль.', 'danger')
     return render_template('login.html', form=form)
+
+@app.route('/verify-2fa', methods=['GET', 'POST'])
+def verify_2fa():
+    # Проверяем, что пользователь прошел первый этап аутентификации
+    if 'pre_2fa_user_id' not in session:
+        return redirect(url_for('login'))
+    
+    user = User.query.get(session['pre_2fa_user_id'])
+    if not user:
+        return redirect(url_for('login'))
+    
+    form = TwoFactorForm()
+    if form.validate_on_submit():
+        totp = pyotp.TOTP(user.totp_secret)
+        if totp.verify(form.token.data):
+            # Успешная аутентификация, очищаем сессию и логиним пользователя
+            session.pop('pre_2fa_user_id', None)
+            login_user(user)
+            flash('Двухфакторная аутентификация успешна!', 'success')
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Неверный код аутентификации', 'danger')
+    
+    return render_template('verify_2fa.html', form=form)
 
 @app.route('/logout')
 @login_required
