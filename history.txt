@@ -10,3 +10,6 @@ git checkout 378af27b1828e4f0ee99a3b76f97b65
 
 защита XSS и исправлено отображение Bootstrap, отредактирована CSP
 git checkout 6b2dee56a3578dad8e93f308d40c2dfb079bb6af
+
+двухфакторная аутентификация и хэширование паролей
+git checkout 8256e74ad9d41c98af51de7d6e4ae412b003eab7
