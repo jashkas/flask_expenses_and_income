@@ -13,3 +13,6 @@ git checkout 6b2dee56a3578dad8e93f308d40c2dfb079bb6af
 
 двухфакторная аутентификация и хэширование паролей
 git checkout 8256e74ad9d41c98af51de7d6e4ae412b003eab7
+
+Проведение статического анализа кода с помощью инструмента Pylint
+git checkout 95ee19eb5943fa1254b0e133afc75f7cc9dcd
