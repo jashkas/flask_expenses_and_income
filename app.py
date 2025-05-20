@@ -18,11 +18,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Настройки CSP
 CSP_POLICY = (
-    "default-src 'self'; "
-    "script-src 'self'; "
-    "style-src 'self' https://cdn.jsdelivr.net; "  # Разрешаем стили с jsdelivr
+    "default-src 'self' https:; "  # поддержка HTTPS:
+    "script-src 'self' https:; "
+    "style-src 'self'  https: https://cdn.jsdelivr.net; "  # Разрешаем стили с jsdelivr
     "script-src 'self' https://cdn.jsdelivr.net; "  # Разрешаем скрипты с jsdelivr
-    "img-src 'self' data:; " # Добавляем data: для QR-кодов
+    "img-src 'self' data:  https:; " # Добавляем data: для QR-кодов
     "font-src 'self'; "
     "object-src 'none'; "
     "base-uri 'self'; "
@@ -57,6 +57,13 @@ def generate_qr_code(uri):
     img.save(buf)
     buf.seek(0)
     return base64.b64encode(buf.read()).decode('ascii')
+
+# Принудительное перенаправление на HTTPS
+#@app.before_request
+#def enforce_https():
+#    if not request.is_secure and app.env != 'development':
+#        url = request.url.replace('http://', 'https://', 1)
+#        return redirect(url, code=301)
 
 @app.route('/')
 def index():
@@ -215,4 +222,6 @@ if __name__ == '__main__':
     # Создание базы данных
     with app.app_context():
         db.create_all()
-    app.run(host='0.0.0.0', port=3000, debug=True)
+    app.run(host='0.0.0.0', port=3000, 
+            ssl_context=('cert.pem', 'key.pem'), # Запуск с поддержкой HTTPS
+            debug=True)

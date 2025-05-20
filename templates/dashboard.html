@@ -1,36 +1,75 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="container mt-5">
+<div class="container mt-3">
     <h2>Личный кабинет</h2>
-    <p>Добро пожаловать, {{ current_user.email }}</p>
+    <p>Добро пожаловать, {{ current_user.username }}</p>
     <a href="{{ url_for('add_expense') }}" class="btn btn-success mb-3">Добавить расход / доход</a>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Дата</th>
-                <th>Категория</th>
-                <th>Описание</th>
-                <th>Сумма</th>
-                <th>Тип</th>
-                <th>Действие</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for expense in expenses %}
-            <tr>
-                <td>{{ expense.date.strftime('%d.%m.%Y') }}</td>
-                <td>{{ expense.category }}</td>
-                <td>{{ expense.description }}</td>
-                <td>{{ expense.amount }}</td>
-                <td>{{ 'Доход' if expense.is_income == true else 'Расход' }}</td>
-                <td>
+    
+    <!-- Десктопная версия таблицы -->
+    <div class="d-none d-md-block">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Категория</th>
+                    <th>Описание</th>
+                    <th>Сумма</th>
+                    <th>Тип</th>
+                    <th>Действие</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for expense in expenses %}
+                <tr>
+                    <td>{{ expense.date.strftime('%d.%m.%Y') }}</td>
+                    <td>{{ expense.category }}</td>
+                    <td>{{ expense.description }}</td>
+                    <td>{{ expense.amount }}</td>
+                    <td>{{ 'Доход' if expense.is_income == true else 'Расход' }}</td>
+                    <td>
+                        <a href="{{ url_for('edit_expense', expense_id=expense.id) }}" class="btn btn-warning btn-sm">Редактировать</a>
+                        <a href="{{ url_for('delete_expense', expense_id=expense.id) }}" class="btn btn-danger btn-sm">Удалить</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Мобильная версия таблицы -->
+    <div class="d-md-none">
+        {% for expense in expenses %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row mb-2">
+                    <div class="col-6"><strong>Дата:</strong></div>
+                    <div class="col-6">{{ expense.date.strftime('%d.%m.%Y') }}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-6"><strong>Категория:</strong></div>
+                    <div class="col-6">{{ expense.category }}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-6"><strong>Описание:</strong></div>
+                    <div class="col-6">{{ expense.description }}</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-6"><strong>Сумма:</strong></div>
+                    <div class="col-6">{{ expense.amount }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-6"><strong>Тип:</strong></div>
+                    <div class="col-6">{{ 'Доход' if expense.is_income == true else 'Расход' }}</div>
+                </div>
+                <div class="d-flex justify-content-between">
                     <a href="{{ url_for('edit_expense', expense_id=expense.id) }}" class="btn btn-warning btn-sm">Редактировать</a>
                     <a href="{{ url_for('delete_expense', expense_id=expense.id) }}" class="btn btn-danger btn-sm">Удалить</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
     <a href="{{ url_for('logout') }}" class="btn btn-secondary mt-3">Выйти</a>
 </div>
 {% endblock %}
