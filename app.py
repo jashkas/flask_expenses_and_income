@@ -88,6 +88,9 @@ def register():
 def login():
     form = LoginForm()
     if form.validate_on_submit():
+        users = User.query.all()
+        for u in users:
+            print(u.username, "  ", u.password)
         user = User.query.filter_by(username=escape(form.username.data)).first()
         if user and bcrypt.check_password_hash(user.password, escape(form.password.data)):
             # Сохраняем user_id в сессии для второго фактора
@@ -212,4 +215,4 @@ if __name__ == '__main__':
     # Создание базы данных
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=3000, debug=True)

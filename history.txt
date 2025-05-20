@@ -3,7 +3,7 @@ git checkout 2b808ccbd50c
 
 
 откат до уязвимого к sql инъекциям
-git checkout 26632e2ee9ace716b9b4f802b23bbfe69dba80d1
+git checkout 26632e2ee9ace716b9b4f802b23bbfeq69dba80d1
 
 защита XSS и CSP
 git checkout 378af27b1828e4f0ee99a3b76f97b65
@@ -16,3 +16,7 @@ git checkout 8256e74ad9d41c98af51de7d6e4ae412b003eab7
 
 Проведение статического анализа кода с помощью инструмента Pylint
 git checkout 95ee19eb5943fa1254b0e133afc75f7cc9dcd
+
+last commit before mobile
+git checkout a2a270a139d665b31
+
