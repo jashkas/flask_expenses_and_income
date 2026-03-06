@@ -5,6 +5,67 @@
     <p>Добро пожаловать, {{ current_user.username }}</p>
     <a href="{{ url_for('add_expense') }}" class="btn btn-success mb-3">Добавить расход / доход</a>
     
+    <!-- Блок с балансом и статистикой -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Доходы</h5>
+                    <p class="card-text h4">{{ "%.2f"|format(total_income) }} ₽</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Расходы</h5>
+                    <p class="card-text h4">{{ "%.2f"|format(total_expense) }} ₽</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card {% if balance >= 0 %}bg-info{% else %}bg-warning{% endif %} text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Баланс</h5>
+                    <p class="card-text h4">{{ "%.2f"|format(balance) }} ₽</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Ежедневная статистика -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Ежедневная статистика</h5>
+        </div>
+        <div class="card-body p-0">
+            <div style="max-height: 400px; overflow-y: auto; border: 1px solid #dee2e6;">
+                <table class="table table-sm mb-0">
+                    <thead style="position: sticky; top: 0; background: white; z-index: 10;">
+                        <tr>
+                            <th style="border-bottom: 2px solid #dee2e6; background: white;">Дата</th>
+                            <th class="text-success" style="border-bottom: 2px solid #dee2e6; background: white;">Доходы</th>
+                            <th class="text-danger" style="border-bottom: 2px solid #dee2e6; background: white;">Расходы</th>
+                            <th class="text-primary" style="border-bottom: 2px solid #dee2e6; background: white;">Баланс дня</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for day in daily_data %}
+                        <tr>
+                            <td>{{ day.date.strftime('%d.%m.%Y') }}</td>
+                            <td class="text-success">{{ "%.2f"|format(day.income) }} ₽</td>
+                            <td class="text-danger">{{ "%.2f"|format(day.expense) }} ₽</td>
+                            <td class="{% if (day.income - day.expense) >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ "%.2f"|format(day.income - day.expense) }} ₽
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
     <!-- Десктопная версия таблицы -->
     <div class="d-none d-md-block">
         <table class="table">

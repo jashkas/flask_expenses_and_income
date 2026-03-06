@@ -6,5 +6,8 @@
 `pip install flask_sqlalchemy` - база данных
 `pip install flask_login` - авторизация
 `pip install flask_bcrypt` - шифрование
+`pip install pyotp` - 
+`pip install qrcode`
+`pip install flask_wtf`
 
 Деактивация виртуального окружения после установки `deactivate`

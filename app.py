@@ -140,8 +140,47 @@ def logout():
 @app.route('/dashboard', methods=['GET', 'POST'])
 @login_required
 def dashboard():
-    expenses = Expense.query.filter_by(user_id=current_user.id).all()
-    return render_template('dashboard.html', expenses=expenses)
+    # Получаем расходы/доходы с сортировкой
+    expenses = Expense.query.filter_by(user_id=current_user.id)\
+                           .order_by(Expense.date.desc(), Expense.id.desc())\
+                           .all()
+    
+    # Рассчитываем общие суммы
+    total_income = db.session.query(
+        db.func.coalesce(db.func.sum(Expense.amount), 0)
+    ).filter(
+        Expense.user_id == current_user.id,
+        Expense.is_income == True
+    ).scalar()
+    
+    total_expense = db.session.query(
+        db.func.coalesce(db.func.sum(Expense.amount), 0)
+    ).filter(
+        Expense.user_id == current_user.id,
+        Expense.is_income == False
+    ).scalar()
+    
+    balance = total_income - total_expense
+    
+    # Группируем по дням
+    daily_data = db.session.query(
+        Expense.date,
+        db.func.sum(db.case((Expense.is_income == True, Expense.amount), else_=0)).label('income'),
+        db.func.sum(db.case((Expense.is_income == False, Expense.amount), else_=0)).label('expense')
+    ).filter(
+        Expense.user_id == current_user.id
+    ).group_by(
+        Expense.date
+    ).order_by(
+        Expense.date.desc()
+    ).limit(10).all()
+    
+    return render_template('dashboard.html', 
+                         expenses=expenses, 
+                         total_income=total_income,
+                         total_expense=total_expense,
+                         balance=balance,
+                         daily_data=daily_data)
 
 @app.route('/add', methods=['GET', 'POST'])
 @login_required
@@ -225,3 +264,6 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000, 
             ssl_context=('cert.pem', 'key.pem'), # Запуск с поддержкой HTTPS
             debug=True)
+
+# .venv\Scripts\activate
+# python app.py

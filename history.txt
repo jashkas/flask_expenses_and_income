@@ -20,3 +20,6 @@ git checkout 95ee19eb5943fa1254b0e133afc75f7cc9dcd
 last commit before mobile
 git checkout a2a270a139d665b31
 
+https с самописным сертификатом в режиме тестирования
+git checkout 91008b101301a
+
